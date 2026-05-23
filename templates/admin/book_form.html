@@ -1,0 +1,71 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{{ action }} Book{% endblock %}
+
+{% block admin_content %}
+<div style="margin-bottom: 1rem;">
+  <a href="{{ url_for('admin_books') }}" class="text-muted text-small">← Back to Manage Books</a>
+</div>
+<h1 style="margin-bottom: 2rem;">{{ action }} Book</h1>
+
+<div style="max-width: 640px;">
+  <form method="POST" novalidate>
+    <div class="panel">
+      <div class="form-group">
+        <label class="form-label" for="title">Title <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="title" name="title" class="form-control" required maxlength="200"
+               value="{{ form_data.get('title', '') }}" placeholder="e.g. The Great Gatsby">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="author">Author <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="author" name="author" class="form-control" required maxlength="200"
+               value="{{ form_data.get('author', '') }}" placeholder="e.g. F. Scott Fitzgerald">
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label class="form-label" for="isbn">ISBN <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="isbn" name="isbn" class="form-control" required maxlength="17"
+                 value="{{ form_data.get('isbn', '') }}" placeholder="9780743273565">
+          <p class="form-hint">10 or 13 digit ISBN</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="category">Category <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="category" name="category" class="form-control" required maxlength="100"
+                 value="{{ form_data.get('category', '') }}" placeholder="e.g. Classic Fiction">
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label class="form-label" for="price">Price (AUD) <span style="color:var(--danger)">*</span></label>
+          <input type="number" id="price" name="price" class="form-control" required
+                 min="0.01" step="0.01" value="{{ form_data.get('price', '') }}" placeholder="19.99">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="stock">Stock Quantity <span style="color:var(--danger)">*</span></label>
+          <input type="number" id="stock" name="stock" class="form-control" required
+                 min="0" step="1" value="{{ form_data.get('stock', '') }}" placeholder="10">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="description">Description</label>
+        <textarea id="description" name="description" class="form-control" maxlength="1000"
+                  placeholder="A brief synopsis of the book…">{{ form_data.get('description', '') }}</textarea>
+      </div>
+
+      {% if action == 'Edit' %}
+        <div class="form-group">
+          <label class="form-label" for="available">Availability</label>
+          <select id="available" name="available" class="form-control">
+            <option value="1" {% if form_data.get('available') %}selected{% endif %}>Visible in catalogue</option>
+            <option value="0" {% if not form_data.get('available') %}selected{% endif %}>Hidden from catalogue</option>
+          </select>
+        </div>
+      {% endif %}
+    </div>
+
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+      <button type="submit" class="btn btn-primary btn-lg">{{ action }} Book</button>
+      <a href="{{ url_for('admin_books') }}" class="btn btn-outline btn-lg">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

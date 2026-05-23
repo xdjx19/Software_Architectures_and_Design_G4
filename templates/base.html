@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Favourite Books{% endblock %} — Online Bookstore</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+ 
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="{{ url_for('index') }}" class="navbar-brand">
+      <span>Favourite</span> Books
+    </a>
+    <ul class="navbar-nav">
+      <li><a href="{{ url_for('catalogue') }}" {% if request.endpoint == 'catalogue' %}class="active"{% endif %}>Browse</a></li>
+      {% if session.get('role') == 'customer' %}
+        <li><a href="{{ url_for('cart') }}" {% if request.endpoint == 'cart' %}class="active"{% endif %}>
+          Cart {% if cart_count is defined and cart_count > 0 %}<span class="cart-badge">{{ cart_count }}</span>{% endif %}
+        </a></li>
+        <li><a href="{{ url_for('my_orders') }}">Orders</a></li>
+        <li><a href="{{ url_for('logout') }}">Sign Out</a></li>
+      {% elif session.get('role') == 'admin' %}
+        <li><a href="{{ url_for('admin_dashboard') }}" {% if 'admin' in request.endpoint %}class="active"{% endif %}>Admin</a></li>
+        <li><a href="{{ url_for('logout') }}">Sign Out</a></li>
+      {% else %}
+        <li><a href="{{ url_for('login') }}" {% if request.endpoint == 'login' %}class="active"{% endif %}>Sign In</a></li>
+        <li><a href="{{ url_for('register') }}" {% if request.endpoint == 'register' %}class="active"{% endif %}>Register</a></li>
+      {% endif %}
+    </ul>
+  </div>
+</nav>
+ 
+<div class="container" style="padding-top: 1.25rem;">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul class="alerts">
+        {% for category, message in messages %}
+          <li class="alert alert-{{ category }}">
+            <span>{{ message }}</span>
+            <button class="alert-close" onclick="this.parentElement.remove()">✕</button>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+</div>
+ 
+{% block full_width %}{% endblock %}
+ 
+<div class="container main-content">
+  {% block content %}{% endblock %}
+</div>
+ 
+<footer>
+  <p>© 2026 Favourite Books — <a href="#">Privacy Policy</a> · <a href="#">Terms of Service</a></p>
+  <p style="margin-top: 0.3rem; font-size: 0.78rem;">Glenferrie Road, Hawthorn VIC 3122</p>
+</footer>
+ 
+<script>
+  // Auto-dismiss alerts after 5 seconds
+  setTimeout(() => {
+    document.querySelectorAll('.alert').forEach(el => {
+      el.style.transition = 'opacity 0.4s';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 400);
+    });
+  }, 5000);
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

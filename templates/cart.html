@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Shopping Cart{% endblock %}
+
+{% block full_width %}
+<div class="page-header">
+  <div class="container">
+    <h1>Shopping Cart</h1>
+    <p>{{ items|length }} item{{ 's' if items|length != 1 }} in your cart</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+{% if items %}
+  <div class="panel" style="padding: 0;">
+    {% for item in items %}
+      <div class="cart-item">
+        <!-- Book Info -->
+        <div>
+          <a href="{{ url_for('book_detail', book_id=item.product.id) }}" style="font-family: 'Playfair Display', serif; font-weight: 700; color: var(--ink);">
+            {{ item.product.title }}
+          </a>
+          <div class="text-muted text-small" style="font-style: italic;">{{ item.product.author }}</div>
+          <div class="text-small text-muted">${{ "%.2f"|format(item.product.price) }} each</div>
+        </div>
+
+        <!-- Quantity Update -->
+        <form method="POST" action="{{ url_for('update_cart_item', item_id=item.id) }}" class="cart-qty">
+          <input type="number" name="quantity" value="{{ item.quantity }}"
+                 min="1" max="{{ item.product.stock }}" class="form-control"
+                 onchange="this.form.submit()">
+        </form>
+
+        <!-- Subtotal -->
+        <div class="price">${{ "%.2f"|format(item.subtotal) }}</div>
+
+        <!-- Remove -->
+        <form method="POST" action="{{ url_for('remove_from_cart', item_id=item.id) }}">
+          <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+        </form>
+      </div>
+    {% endfor %}
+
+    <div class="cart-total-row">
+      <span>Total:</span>
+      <strong>${{ "%.2f"|format(total) }}</strong>
+    </div>
+  </div>
+
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <a href="{{ url_for('catalogue') }}" class="btn btn-outline">← Continue Shopping</a>
+    <a href="{{ url_for('checkout') }}" class="btn btn-primary btn-lg">Proceed to Checkout</a>
+  </div>
+
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">🛒</div>
+    <h3>Your cart is empty</h3>
+    <p>Add some books to get started.</p>
+    <a href="{{ url_for('catalogue') }}" class="btn btn-primary mt-2">Browse Catalogue</a>
+  </div>
+{% endif %}
+{% endblock %}

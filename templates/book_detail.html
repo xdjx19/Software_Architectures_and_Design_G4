@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{{ book.title }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1rem;">
+  <a href="{{ url_for('catalogue') }}" class="text-muted text-small">← Back to Catalogue</a>
+</div>
+
+<div class="book-detail">
+  <!-- Cover -->
+  {% set colors = ['#2d4a3e','#3a2d4a','#4a3a2d','#2d3a4a','#4a2d3a','#3a4a2d'] %}
+  <div class="book-detail-cover">
+    <div class="book-cover" style="background: {{ colors[book.id % colors|length] }}; aspect-ratio: 2/3; font-size: 1.1rem;">
+      {{ book.title }}
+    </div>
+  </div>
+
+  <!-- Details -->
+  <div>
+    <h1 style="margin-bottom: 0.25rem;">{{ book.title }}</h1>
+    <p style="font-size: 1.1rem; color: var(--ink-light); font-style: italic; margin-bottom: 1rem;">by {{ book.author }}</p>
+
+    <div style="margin-bottom: 1.25rem;">
+      <span class="badge badge-category">{{ book.category }}</span>
+      {% if book.stock == 0 %}
+        <span class="badge badge-out" style="margin-left: 6px;">Out of Stock</span>
+      {% elif book.stock <= 3 %}
+        <span class="badge badge-stock-low" style="margin-left: 6px;">Only {{ book.stock }} left</span>
+      {% else %}
+        <span class="badge badge-stock-ok" style="margin-left: 6px;">In Stock</span>
+      {% endif %}
+    </div>
+
+    <div style="font-size: 2rem; color: var(--rust); font-family: 'Playfair Display', serif; font-weight: 700; margin-bottom: 1.25rem;">
+      ${{ "%.2f"|format(book.price) }} AUD
+    </div>
+
+    <p style="color: var(--ink-light); line-height: 1.7; margin-bottom: 1.5rem;">{{ book.description }}</p>
+
+    {% if book.stock > 0 and session.get('role') == 'customer' %}
+      <form method="POST" action="{{ url_for('add_to_cart', product_id=book.id) }}">
+        <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem;">
+          <div class="form-group" style="margin: 0; width: 80px;">
+            <input type="number" name="quantity" class="form-control" value="1" min="1" max="{{ book.stock }}" style="text-align: center;">
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
+        </div>
+      </form>
+    {% elif book.stock == 0 %}
+      <p class="text-muted"><em>This book is currently out of stock.</em></p>
+    {% elif not session.get('account_id') %}
+      <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">Sign in to Purchase</a>
+    {% endif %}
+
+    <hr class="divider">
+
+    <dl class="book-meta">
+      <dt>ISBN</dt>
+      <dd>{{ book.isbn }}</dd>
+      <dt>Category</dt>
+      <dd>{{ book.category }}</dd>
+      <dt>Availability</dt>
+      <dd>{{ book.stock }} copies in stock</dd>
+    </dl>
+  </div>
+</div>
+{% endblock %}

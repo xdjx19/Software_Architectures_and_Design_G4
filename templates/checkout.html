@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Checkout{% endblock %}
+
+{% block full_width %}
+<div class="page-header">
+  <div class="container">
+    <h1>Checkout</h1>
+    <p>Complete your order</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<form method="POST" action="{{ url_for('checkout') }}" novalidate>
+  <div class="checkout-grid">
+    <!-- Left: Delivery + Payment -->
+    <div>
+      <!-- Delivery Details -->
+      <div class="panel">
+        <div class="panel-title">Delivery Information</div>
+        <div class="form-group">
+          <label class="form-label" for="shipping_address">
+            Shipping Address <span style="color:var(--danger)">*</span>
+          </label>
+          <input type="text" id="shipping_address" name="shipping_address"
+                 class="form-control" required minlength="5" maxlength="300"
+                 placeholder="123 Example St, Melbourne VIC 3000"
+                 value="{{ account['address'] or '' if account else '' }}">
+          <p class="form-hint">Please enter your full delivery address including suburb, state and postcode.</p>
+        </div>
+      </div>
+
+      <!-- Payment Details -->
+      <div class="panel">
+        <div class="panel-title">Payment Details</div>
+        <p class="text-muted text-small" style="margin-bottom: 1rem;">
+          🔒 Your payment is securely processed. No real transaction will occur.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="card_number">
+            Card Number <span style="color:var(--danger)">*</span>
+          </label>
+          <input type="text" id="card_number" name="card_number"
+                 class="form-control" required maxlength="19"
+                 placeholder="0000 0000 0000 0000"
+                 inputmode="numeric">
+          <p class="form-hint">Use a card ending in 0000 to simulate a declined payment.</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="card_name">
+            Cardholder Name <span style="color:var(--danger)">*</span>
+          </label>
+          <input type="text" id="card_name" name="card_name"
+                 class="form-control" required maxlength="100"
+                 placeholder="Jane Smith">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="expiry">
+              Expiry (MM/YY) <span style="color:var(--danger)">*</span>
+            </label>
+            <input type="text" id="expiry" name="expiry"
+                   class="form-control" required maxlength="5"
+                   placeholder="12/27">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cvv">
+              CVV <span style="color:var(--danger)">*</span>
+            </label>
+            <input type="password" id="cvv" name="cvv"
+                   class="form-control" required maxlength="4"
+                   placeholder="•••">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Order Summary -->
+    <div class="order-summary">
+      <div class="panel">
+        <div class="panel-title">Order Summary</div>
+        {% for item in items %}
+          <div class="order-summary-item">
+            <span>{{ item.product.title }} × {{ item.quantity }}</span>
+            <span>${{ "%.2f"|format(item.subtotal) }}</span>
+          </div>
+        {% endfor %}
+        <div class="order-summary-item text-muted">
+          <span>Shipping</span>
+          <span>Calculated at dispatch</span>
+        </div>
+        <div class="order-summary-total">
+          <span>Total</span>
+          <span>${{ "%.2f"|format(total) }}</span>
+        </div>
+        <button type="submit" class="btn btn-primary w-100" style="margin-top: 1.25rem;">
+          Place Order — ${{ "%.2f"|format(total) }}
+        </button>
+        <p class="text-center text-small text-muted mt-1">
+          By placing your order you agree to our <a href="#">Terms of Service</a>.
+        </p>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Auto-format card number with spaces
+  const cardInput = document.getElementById('card_number');
+  cardInput.addEventListener('input', function () {
+    let val = this.value.replace(/\D/g, '').substring(0, 16);
+    this.value = val.replace(/(.{4})/g, '$1 ').trim();
+  });
+
+  // Auto-format expiry
+  const expiryInput = document.getElementById('expiry');
+  expiryInput.addEventListener('input', function () {
+    let val = this.value.replace(/\D/g, '').substring(0, 4);
+    if (val.length >= 3) val = val.substring(0, 2) + '/' + val.substring(2);
+    this.value = val;
+  });
+</script>
+{% endblock %}

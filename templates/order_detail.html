@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Order #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1rem;">
+  <a href="{{ url_for('my_orders') }}" class="text-muted text-small">← Back to My Orders</a>
+</div>
+
+<h1 style="margin-bottom: 0.5rem;">Order #{{ order.id }}</h1>
+<p class="text-muted">Placed on {{ order.created_at }}</p>
+
+<div style="display: grid; grid-template-columns: 1fr 300px; gap: 2rem; margin-top: 1.5rem;">
+  <div>
+    <div class="panel">
+      <div class="panel-title">Items Ordered</div>
+      {% for item in items %}
+        <div class="order-summary-item">
+          <span>
+            <strong>{{ item.title }}</strong><br>
+            <span class="text-muted text-small" style="font-style:italic;">{{ item.author }}</span>
+            <span class="text-muted text-small"> · ISBN: {{ item.isbn }}</span>
+          </span>
+          <span>{{ item.quantity }} × ${{ "%.2f"|format(item.unit_price) }}</span>
+        </div>
+      {% endfor %}
+      <div class="order-summary-total">
+        <span>Total</span>
+        <span>${{ "%.2f"|format(order.total_price) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-title">Order Status</div>
+      {% if order.status == 'paid' %}
+        <span class="badge badge-paid">✓ Payment Successful</span>
+        <p class="text-small text-muted mt-1">Your order is being processed and will be dispatched shortly.</p>
+      {% elif order.status == 'payment_failed' %}
+        <span class="badge badge-failed">✗ Payment Failed</span>
+        <p class="text-small text-muted mt-1">Your payment could not be processed.</p>
+      {% else %}
+        <span class="badge badge-pending">{{ order.status|capitalize }}</span>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Delivery Address</div>
+      <p class="text-small">{{ order.shipping_address }}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

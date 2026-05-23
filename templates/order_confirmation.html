@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Order Confirmed{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 3rem auto;">
+  <div class="confirm-box">
+    <div class="confirm-icon">✅</div>
+    <h1 style="margin-bottom: 0.5rem;">Order Confirmed!</h1>
+    <p class="text-muted">Thank you for your order. A confirmation has been noted in your account.</p>
+    <p style="font-size: 0.9rem; color: var(--ink-light);">Order #{{ order.id }} · {{ order.created_at }}</p>
+  </div>
+
+  <div class="panel" style="margin-top: 2rem;">
+    <div class="panel-title">Order Details</div>
+    {% for item in items %}
+      <div class="order-summary-item">
+        <span>{{ item.title }} ({{ item.author }}) × {{ item.quantity }}</span>
+        <span>${{ "%.2f"|format(item.unit_price * item.quantity) }}</span>
+      </div>
+    {% endfor %}
+    <div class="order-summary-total">
+      <span>Total Paid</span>
+      <span>${{ "%.2f"|format(order.total_price) }}</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Delivery Information</div>
+    <p><strong>Shipping to:</strong> {{ order.shipping_address }}</p>
+    <p class="text-muted text-small">Your order will be dispatched within 1–3 business days and delivered via AusPost.</p>
+  </div>
+
+  <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap;">
+    <a href="{{ url_for('my_orders') }}" class="btn btn-outline">View All Orders</a>
+    <a href="{{ url_for('catalogue') }}" class="btn btn-primary">Continue Shopping</a>
+  </div>
+</div>
+{% endblock %}

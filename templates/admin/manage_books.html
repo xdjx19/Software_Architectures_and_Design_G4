@@ -1,0 +1,68 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Manage Books{% endblock %}
+
+{% block admin_content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+  <h1>Manage Books</h1>
+  <a href="{{ url_for('admin_add_book') }}" class="btn btn-primary">+ Add New Book</a>
+</div>
+
+{% if books %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Stock</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for book in books %}
+          <tr>
+            <td><strong>{{ book.title }}</strong></td>
+            <td class="text-muted" style="font-style:italic;">{{ book.author }}</td>
+            <td><span class="badge badge-category">{{ book.category }}</span></td>
+            <td class="price">${{ "%.2f"|format(book.price) }}</td>
+            <td>
+              {% if book.stock == 0 %}
+                <span class="badge badge-out">0</span>
+              {% elif book.stock <= 3 %}
+                <span class="badge badge-stock-low">{{ book.stock }}</span>
+              {% else %}
+                {{ book.stock }}
+              {% endif %}
+            </td>
+            <td>
+              {% if book.available %}
+                <span class="badge badge-paid">Active</span>
+              {% else %}
+                <span class="badge badge-failed">Hidden</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display: flex; gap: 0.4rem;">
+                <a href="{{ url_for('admin_edit_book', book_id=book.id) }}" class="btn btn-outline btn-sm">Edit</a>
+                <form method="POST" action="{{ url_for('admin_delete_book', book_id=book.id) }}"
+                      onsubmit="return confirm('Delete \'{{ book.title }}\'? This cannot be undone.')">
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📚</div>
+    <h3>No books in the catalogue</h3>
+    <a href="{{ url_for('admin_add_book') }}" class="btn btn-primary mt-2">Add First Book</a>
+  </div>
+{% endif %}
+{% endblock %}

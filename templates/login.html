@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Sign In{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-panel">
+    <div class="auth-header">
+      <h1>Welcome back</h1>
+      <p>Sign in to your Favourite Books account</p>
+    </div>
+    <div class="auth-card">
+      <form method="POST" action="{{ url_for('login') }}" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <input type="email" id="email" name="email" class="form-control"
+                 placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input type="password" id="password" name="password" class="form-control"
+                 placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary w-100" style="margin-top: 0.5rem;">Sign In</button>
+      </form>
+      <div class="auth-divider" style="margin-top: 1.5rem;">or</div>
+      <div class="text-center">
+        <p class="text-muted text-small">Don't have an account?
+          <a href="{{ url_for('register') }}">Create one</a>
+        </p>
+      </div>
+    </div>
+    <p class="text-center text-small text-muted mt-2">
+      Admin? Use your admin credentials above.
+    </p>
+  </div>
+</div>
+{% endblock %}

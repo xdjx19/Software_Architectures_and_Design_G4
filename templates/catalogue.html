@@ -1,0 +1,81 @@
+
+raw
+Catalogue · HTML
+{% extends "base.html" %}
+{% block title %}Browse Books{% endblock %}
+ 
+{% block full_width %}
+<div class="page-header">
+  <div class="container">
+    <h1>Our Catalogue</h1>
+    <p>{{ books|length }} book{{ 's' if books|length != 1 }} available</p>
+  </div>
+</div>
+{% endblock %}
+ 
+{% block content %}
+<!-- Search Bar -->
+<form method="GET" action="{{ url_for('catalogue') }}" style="margin-bottom: 1.25rem;">
+  <div class="search-bar">
+    <input type="text" name="q" class="form-control" placeholder="Search by title, author, or category…" value="{{ query }}">
+    <button type="submit" class="btn btn-primary">Search</button>
+    {% if query or selected_category %}
+      <a href="{{ url_for('catalogue') }}" class="btn btn-outline">Clear</a>
+    {% endif %}
+  </div>
+</form>
+ 
+<!-- Category Filters -->
+<div class="filter-row">
+  <label>Category:</label>
+  <div class="filter-tags">
+    <a href="{{ url_for('catalogue') }}" class="filter-tag {% if not selected_category %}active{% endif %}">All</a>
+    {% for cat in categories %}
+      <a href="{{ url_for('catalogue', category=cat) }}"
+         class="filter-tag {% if selected_category == cat %}active{% endif %}">{{ cat }}</a>
+    {% endfor %}
+  </div>
+</div>
+ 
+{% if query %}
+  <p class="text-muted mb-2">Showing results for "<strong>{{ query }}</strong>"</p>
+{% elif selected_category %}
+  <p class="text-muted mb-2">Showing: <strong>{{ selected_category }}</strong></p>
+{% endif %}
+ 
+{% if books %}
+  <div class="book-grid">
+    {% set colors = ['#2d4a3e','#3a2d4a','#4a3a2d','#2d3a4a','#4a2d3a','#3a4a2d','#1e3a5f','#5f3a1e'] %}
+    {% for book in books %}
+      <a href="{{ url_for('book_detail', book_id=book.id) }}" style="text-decoration: none;">
+        <div class="card">
+          <div class="book-cover" style="background: {{ colors[loop.index0 % colors|length] }};">
+            {{ book.title }}
+          </div>
+          <div class="card-body">
+            <div class="card-title">{{ book.title }}</div>
+            <div class="card-subtitle">{{ book.author }}</div>
+            <span class="badge badge-category">{{ book.category }}</span>
+            {% if book.stock == 0 %}
+              <span class="badge badge-out" style="margin-left: 4px;">Out of stock</span>
+            {% elif book.stock <= 3 %}
+              <span class="badge badge-stock-low" style="margin-left: 4px;">Low stock</span>
+            {% endif %}
+          </div>
+          <div class="card-footer">
+            <span class="price">${{ "%.2f"|format(book.price) }}</span>
+            <span class="btn btn-outline btn-sm">View</span>
+          </div>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">🔍</div>
+    <h3>No books found</h3>
+    <p>Try a different search term or browse all categories.</p>
+    <a href="{{ url_for('catalogue') }}" class="btn btn-outline mt-2">Browse All</a>
+  </div>
+{% endif %}
+{% endblock %}

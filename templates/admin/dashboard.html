@@ -1,0 +1,97 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block admin_content %}
+<h1 style="margin-bottom: 2rem;">Dashboard</h1>
+
+<!-- Stats -->
+<div class="stat-cards">
+  <div class="stat-card">
+    <div class="stat-value">{{ books|length }}</div>
+    <div class="stat-label">Total Books</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ orders|length }}</div>
+    <div class="stat-label">Total Orders</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">${{ "%.0f"|format(summary.total_revenue) }}</div>
+    <div class="stat-label">Total Revenue</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ summary.order_count }}</div>
+    <div class="stat-label">Paid Orders</div>
+  </div>
+</div>
+
+<!-- Recent Orders -->
+<div class="section">
+  <div class="section-header">
+    <h2>Recent Orders</h2>
+    <a href="{{ url_for('admin_orders') }}">View all →</a>
+  </div>
+  {% if orders %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Order #</th>
+            <th>Customer</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders[:8] %}
+            <tr>
+              <td><strong>#{{ order.id }}</strong></td>
+              <td>{{ order.customer_name }}<br><span class="text-muted text-small">{{ order.customer_email }}</span></td>
+              <td class="price">${{ "%.2f"|format(order.total_price) }}</td>
+              <td>
+                {% if order.status == 'paid' %}
+                  <span class="badge badge-paid">Paid</span>
+                {% elif order.status == 'payment_failed' %}
+                  <span class="badge badge-failed">Failed</span>
+                {% else %}
+                  <span class="badge badge-pending">{{ order.status }}</span>
+                {% endif %}
+              </td>
+              <td class="text-small">{{ order.created_at }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-muted">No orders yet.</p>
+  {% endif %}
+</div>
+
+<!-- Top Selling Books -->
+{% if summary.top_books %}
+  <div class="section">
+    <div class="section-header">
+      <h2>Top Selling Books</h2>
+      <a href="{{ url_for('admin_reports') }}">Full report →</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Title</th><th>Author</th><th>Units Sold</th><th>Revenue</th></tr>
+        </thead>
+        <tbody>
+          {% for book in summary.top_books %}
+            <tr>
+              <td><strong>{{ book.title }}</strong></td>
+              <td class="text-muted" style="font-style:italic;">{{ book.author }}</td>
+              <td>{{ book.units_sold }}</td>
+              <td class="price">${{ "%.2f"|format(book.book_revenue) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

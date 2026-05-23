@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}My Orders{% endblock %}
+
+{% block full_width %}
+<div class="page-header">
+  <div class="container">
+    <h1>My Orders</h1>
+    <p>{{ orders|length }} order{{ 's' if orders|length != 1 }}</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+{% if orders %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Order #</th>
+          <th>Date</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Shipping To</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+          <tr>
+            <td><strong>#{{ order.id }}</strong></td>
+            <td>{{ order.created_at }}</td>
+            <td class="price">${{ "%.2f"|format(order.total_price) }}</td>
+            <td>
+              {% if order.status == 'paid' %}
+                <span class="badge badge-paid">Paid</span>
+              {% elif order.status == 'payment_failed' %}
+                <span class="badge badge-failed">Payment Failed</span>
+              {% else %}
+                <span class="badge badge-pending">{{ order.status|capitalize }}</span>
+              {% endif %}
+            </td>
+            <td class="text-small text-muted">{{ order.shipping_address }}</td>
+            <td><a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-outline btn-sm">Details</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📦</div>
+    <h3>No orders yet</h3>
+    <p>Your order history will appear here after your first purchase.</p>
+    <a href="{{ url_for('catalogue') }}" class="btn btn-primary mt-2">Start Shopping</a>
+  </div>
+{% endif %}
+{% endblock %}
