@@ -1,0 +1,107 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Sales Reports{% endblock %}
+
+{% block admin_content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+  <h1>Sales Reports</h1>
+
+  <!-- Period Filter -->
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    {% for label, value in [('All Time', 'all'), ('This Month', 'month'), ('This Week', 'week'), ('Today', 'today')] %}
+      <a href="{{ url_for('admin_reports', period=value) }}"
+         class="btn {% if period == value %}btn-primary{% else %}btn-outline{% endif %} btn-sm">
+        {{ label }}
+      </a>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="stat-cards" style="margin-bottom: 2rem;">
+  <div class="stat-card">
+    <div class="stat-value">${{ "%.2f"|format(summary.total_revenue) }}</div>
+    <div class="stat-label">Total Revenue</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ summary.order_count }}</div>
+    <div class="stat-label">Paid Orders</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">
+      {% if summary.order_count > 0 %}
+        ${{ "%.2f"|format(summary.total_revenue / summary.order_count) }}
+      {% else %}
+        $0.00
+      {% endif %}
+    </div>
+    <div class="stat-label">Avg. Order Value</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ summary.top_books|length }}</div>
+    <div class="stat-label">Books Sold</div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+
+  <!-- Top Selling Books -->
+  <div class="panel">
+    <div class="panel-title">Top Selling Books</div>
+    {% if summary.top_books %}
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Title</th>
+            <th>Units</th>
+            <th>Revenue</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for book in summary.top_books %}
+            <tr>
+              <td class="text-muted">{{ loop.index }}</td>
+              <td>
+                <strong>{{ book.title }}</strong><br>
+                <span class="text-muted text-small" style="font-style:italic;">{{ book.author }}</span>
+              </td>
+              <td>{{ book.units_sold }}</td>
+              <td class="price">${{ "%.2f"|format(book.book_revenue) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="text-muted text-small" style="padding: 1rem 0;">No sales data for this period.</p>
+    {% endif %}
+  </div>
+
+  <!-- Sales by Category -->
+  <div class="panel">
+    <div class="panel-title">Sales by Category</div>
+    {% if summary.category_sales %}
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Units Sold</th>
+            <th>Revenue</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cat in summary.category_sales %}
+            <tr>
+              <td><span class="badge badge-category">{{ cat.category }}</span></td>
+              <td>{{ cat.units_sold }}</td>
+              <td class="price">${{ "%.2f"|format(cat.category_revenue) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="text-muted text-small" style="padding: 1rem 0;">No sales data for this period.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

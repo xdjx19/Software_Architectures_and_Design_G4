@@ -1,0 +1,52 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}All Orders{% endblock %}
+
+{% block admin_content %}
+<h1 style="margin-bottom: 2rem;">All Orders</h1>
+
+{% if orders %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Order #</th>
+          <th>Customer</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Shipping Address</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+          <tr>
+            <td><strong>#{{ order.id }}</strong></td>
+            <td>
+              {{ order.customer_name }}<br>
+              <span class="text-muted text-small">{{ order.customer_email }}</span>
+            </td>
+            <td class="price">${{ "%.2f"|format(order.total_price) }}</td>
+            <td>
+              {% if order.status == 'paid' %}
+                <span class="badge badge-paid">Paid</span>
+              {% elif order.status == 'payment_failed' %}
+                <span class="badge badge-failed">Payment Failed</span>
+              {% else %}
+                <span class="badge badge-pending">{{ order.status|capitalize }}</span>
+              {% endif %}
+            </td>
+            <td class="text-small text-muted">{{ order.shipping_address }}</td>
+            <td class="text-small">{{ order.created_at }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📦</div>
+    <h3>No orders yet</h3>
+    <p>Orders will appear here once customers start purchasing.</p>
+  </div>
+{% endif %}
+{% endblock %}
