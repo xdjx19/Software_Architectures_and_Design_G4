@@ -1,20 +1,12 @@
-"""
-Database module for Favourite Books Online Bookstore.
-Implements the Singleton pattern to ensure a single shared database connection.
-
-Coding standard: PEP 8 (https://peps.python.org/pep-0008/)
-"""
+# database.py - handles all SQLite database operations
+# uses Singleton pattern so only one db connection exists at a time
+# Coding standard: PEP 8 - https://peps.python.org/pep-0008/
 
 import sqlite3
 import os
 
 
 class Database:
-    """
-    Singleton database class responsible for managing all SQLite operations.
-    Ensures only one database connection exists throughout the application lifecycle.
-    """
-
     _instance = None
     _db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "favouritebooks.db")
 
@@ -25,7 +17,6 @@ class Database:
         return cls._instance
 
     def get_connection(self):
-        """Returns the active SQLite connection, creating one if necessary."""
         if self._connection is None:
             self._connection = sqlite3.connect(self._db_path, check_same_thread=False)
             self._connection.row_factory = sqlite3.Row
@@ -33,7 +24,6 @@ class Database:
         return self._connection
 
     def execute(self, query, params=()):
-        """Executes a write query (INSERT, UPDATE, DELETE) and commits."""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute(query, params)
@@ -41,21 +31,19 @@ class Database:
         return cursor
 
     def fetchone(self, query, params=()):
-        """Executes a SELECT query and returns a single row."""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute(query, params)
         return cursor.fetchone()
 
     def fetchall(self, query, params=()):
-        """Executes a SELECT query and returns all matching rows."""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute(query, params)
         return cursor.fetchall()
 
     def initialise_schema(self):
-        """Creates all required database tables if they do not already exist."""
+        # creates all tables if they don't exist yet
         conn = self.get_connection()
         cursor = conn.cursor()
 
@@ -120,21 +108,19 @@ class Database:
         conn.commit()
 
     def seed_data(self):
-        """Seeds the database with sample books and an admin account if empty."""
         from werkzeug.security import generate_password_hash
 
+        # don't reseed if admin already exists
         existing = self.fetchone("SELECT id FROM accounts WHERE role = 'admin'")
         if existing:
             return
 
-        # Seed admin account
         self.execute(
             "INSERT INTO accounts (name, email, password, role) VALUES (?, ?, ?, ?)",
             ("Admin", "admin@favouritebooks.com.au",
              generate_password_hash("Admin@123"), "admin")
         )
 
-        # Seed sample books
         books = [
             ("The Great Gatsby", "F. Scott Fitzgerald", "9780743273565", 19.99, 15, "Classic Fiction",
              "A story of wealth, love, and the American Dream set in the 1920s."),
@@ -160,7 +146,6 @@ class Database:
 
         for book in books:
             self.execute(
-                """INSERT INTO products (title, author, isbn, price, stock, category, description)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                "INSERT INTO products (title, author, isbn, price, stock, category, description) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 book
             )

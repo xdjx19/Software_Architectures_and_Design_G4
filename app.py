@@ -1,15 +1,10 @@
-"""
-app.py — Main entry point for Favourite Books Online Bookstore.
-Implements MVC routing using Flask, with session-based authentication.
-
-Coding standard: PEP 8 (https://peps.python.org/pep-0008/)
-Reference: https://peps.python.org/pep-0008/
-"""
+# app.py - Main Flask application for Favourite Books Online Bookstore
+# SWE30003 Group 4
+# Coding standard: PEP 8 - https://peps.python.org/pep-0008/
 
 import re
 from functools import wraps
-from flask import (Flask, render_template, request, redirect,
-                   url_for, session, flash, jsonify)
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 
 from models.database import Database
 from models.account import Account, Customer
@@ -21,23 +16,17 @@ from models.report import SalesReport
 app = Flask(__name__)
 app.secret_key = "favouritebooks-secret-2026"
 
-# ─── Bootstrap ──────────────────────────────────────────────────────────────
 
 def bootstrap():
-    """
-    Bootstraps the application on startup:
-    1. Creates a singleton Database instance
-    2. Initialises the schema
-    3. Seeds sample data if the database is empty
-    """
+    # sets up db tables and seeds data on first run
     db = Database()
     db.initialise_schema()
     db.seed_data()
 
-# ─── Auth Decorators ─────────────────────────────────────────────────────────
+
+# decorators to protect routes
 
 def login_required(f):
-    """Redirects unauthenticated users to the login page."""
     @wraps(f)
     def decorated(*args, **kwargs):
         if "account_id" not in session:
@@ -48,7 +37,6 @@ def login_required(f):
 
 
 def customer_required(f):
-    """Restricts route to customer accounts only."""
     @wraps(f)
     def decorated(*args, **kwargs):
         if session.get("role") != "customer":
@@ -59,7 +47,6 @@ def customer_required(f):
 
 
 def admin_required(f):
-    """Restricts route to administrator accounts only."""
     @wraps(f)
     def decorated(*args, **kwargs):
         if "account_id" not in session:
@@ -71,25 +58,33 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# ─── Validation Helpers ──────────────────────────────────────────────────────
+
+# basic input validation helpers
 
 def is_valid_email(email):
     return bool(re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email))
 
-def is_strong_password(password):
-    """Validates: 8+ chars, 1 uppercase, 1 number, 1 special character."""
-    return (len(password) >= 8 and
-            re.search(r"[A-Z]", password) and
-            re.search(r"\d", password) and
-            re.search(r"[!@#$%^&*(),.?\":{}|<>]", password))
 
-# ─── Public Routes ───────────────────────────────────────────────────────────
+def is_strong_password(pw):
+    # must be 8+ chars, have uppercase, number and special char
+    if len(pw) < 8:
+        return False
+    if not re.search(r"[A-Z]", pw):
+        return False
+    if not re.search(r"\d", pw):
+        return False
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", pw):
+        return False
+    return True
+
+
+# public routes
 
 @app.route("/")
 def index():
-    catalogue = Catalogue()
-    featured = catalogue.get_all_available()[:6]
-    categories = catalogue.get_all_categories()
+    cat = Catalogue()
+    featured = cat.get_all_available()[:6]
+    categories = cat.get_all_categories()
     return render_template("index.html", featured=featured, categories=categories)
 
 
@@ -120,7 +115,7 @@ def book_detail(book_id):
     return render_template("book_detail.html", book=product)
 
 
-# ─── Authentication Routes ───────────────────────────────────────────────────
+# auth routes
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -146,17 +141,16 @@ def register():
             errors.append("Passwords do not match.")
 
         if errors:
-            for error in errors:
-                flash(error, "danger")
-            return render_template("register.html",
-                                   form_data=request.form)
+            for e in errors:
+                flash(e, "danger")
+            return render_template("register.html", form_data=request.form)
 
-        account_id = Customer.register(name, email, password, phone, address)
-        if account_id is None:
+        acc_id = Customer.register(name, email, password, phone, address)
+        if acc_id is None:
             flash("An account with this email already exists.", "danger")
             return render_template("register.html", form_data=request.form)
 
-        flash("Account created successfully! Please log in.", "success")
+        flash("Account created! Please log in.", "success")
         return redirect(url_for("login"))
 
     return render_template("register.html", form_data={})
@@ -175,17 +169,17 @@ def login():
             flash("Please enter both email and password.", "danger")
             return render_template("login.html")
 
-        account = Account.authenticate(email, password)
-        if account:
-            session["account_id"] = account["id"]
-            session["name"] = account["name"]
-            session["role"] = account["role"]
-            flash(f"Welcome back, {account['name']}!", "success")
-            if account["role"] == "admin":
+        acc = Account.authenticate(email, password)
+        if acc:
+            session["account_id"] = acc["id"]
+            session["name"] = acc["name"]
+            session["role"] = acc["role"]
+            flash(f"Welcome back, {acc['name']}!", "success")
+            if acc["role"] == "admin":
                 return redirect(url_for("admin_dashboard"))
             return redirect(url_for("index"))
         else:
-            flash("Invalid email or password. Please try again.", "danger")
+            flash("Invalid email or password.", "danger")
 
     return render_template("login.html")
 
@@ -196,15 +190,16 @@ def logout():
     flash("You have been logged out.", "info")
     return redirect(url_for("index"))
 
-# ─── Cart Routes ─────────────────────────────────────────────────────────────
+
+# cart routes
 
 @app.route("/cart")
 @login_required
 @customer_required
 def cart():
-    cart = ShoppingCart.get_for_account(session["account_id"])
-    items = cart.get_items() if cart else []
-    total = cart.get_total() if cart else 0
+    c = ShoppingCart.get_for_account(session["account_id"])
+    items = c.get_items() if c else []
+    total = c.get_total() if c else 0
     return render_template("cart.html", items=items, total=total)
 
 
@@ -212,15 +207,15 @@ def cart():
 @login_required
 @customer_required
 def add_to_cart(product_id):
-    quantity = int(request.form.get("quantity", 1))
-    if quantity < 1:
+    qty = int(request.form.get("quantity", 1))
+    if qty < 1:
         flash("Quantity must be at least 1.", "danger")
         return redirect(request.referrer or url_for("catalogue"))
 
-    cart = ShoppingCart.get_for_account(session["account_id"])
-    error = cart.add_item(product_id, quantity)
-    if error:
-        flash(error, "danger")
+    c = ShoppingCart.get_for_account(session["account_id"])
+    err = c.add_item(product_id, qty)
+    if err:
+        flash(err, "danger")
     else:
         flash("Book added to your cart.", "success")
     return redirect(request.referrer or url_for("catalogue"))
@@ -230,9 +225,9 @@ def add_to_cart(product_id):
 @login_required
 @customer_required
 def update_cart_item(item_id):
-    quantity = int(request.form.get("quantity", 1))
-    cart = ShoppingCart.get_for_account(session["account_id"])
-    cart.update_item_quantity(item_id, quantity)
+    qty = int(request.form.get("quantity", 1))
+    c = ShoppingCart.get_for_account(session["account_id"])
+    c.update_item_quantity(item_id, qty)
     flash("Cart updated.", "success")
     return redirect(url_for("cart"))
 
@@ -241,25 +236,26 @@ def update_cart_item(item_id):
 @login_required
 @customer_required
 def remove_from_cart(item_id):
-    cart = ShoppingCart.get_for_account(session["account_id"])
-    cart.remove_item(item_id)
+    c = ShoppingCart.get_for_account(session["account_id"])
+    c.remove_item(item_id)
     flash("Item removed from cart.", "info")
     return redirect(url_for("cart"))
 
-# ─── Checkout Routes ──────────────────────────────────────────────────────────
+
+# checkout routes
 
 @app.route("/checkout", methods=["GET", "POST"])
 @login_required
 @customer_required
 def checkout():
-    cart = ShoppingCart.get_for_account(session["account_id"])
-    if not cart or cart.is_empty():
+    c = ShoppingCart.get_for_account(session["account_id"])
+    if not c or c.is_empty():
         flash("Your cart is empty.", "warning")
         return redirect(url_for("cart"))
 
-    account = Account.get_by_id(session["account_id"])
-    items = cart.get_items()
-    total = cart.get_total()
+    acc = Account.get_by_id(session["account_id"])
+    items = c.get_items()
+    total = c.get_total()
 
     if request.method == "POST":
         shipping_address = request.form.get("shipping_address", "").strip()
@@ -281,21 +277,21 @@ def checkout():
             errors.append("CVV must be 3 or 4 digits.")
 
         if errors:
-            for error in errors:
-                flash(error, "danger")
-            return render_template("checkout.html", items=items, total=total, account=account)
+            for e in errors:
+                flash(e, "danger")
+            return render_template("checkout.html", items=items, total=total, account=acc)
 
-        payment_method = {"card_number": card_number, "card_name": card_name}
-        facade = CheckoutFacade(cart, session["account_id"])
-        success, message, order_id = facade.checkout(shipping_address, payment_method)
+        payment_info = {"card_number": card_number, "card_name": card_name}
+        facade = CheckoutFacade(c, session["account_id"])
+        success, msg, order_id = facade.checkout(shipping_address, payment_info)
 
         if success:
-            flash(message, "success")
+            flash(msg, "success")
             return redirect(url_for("order_confirmation", order_id=order_id))
         else:
-            flash(message, "danger")
+            flash(msg, "danger")
 
-    return render_template("checkout.html", items=items, total=total, account=account)
+    return render_template("checkout.html", items=items, total=total, account=acc)
 
 
 @app.route("/order/confirmation/<int:order_id>")
@@ -329,25 +325,25 @@ def order_detail(order_id):
     items = order.get_items()
     return render_template("order_detail.html", order=order, items=items)
 
-# ─── Admin Routes ─────────────────────────────────────────────────────────────
+
+# admin routes
 
 @app.route("/admin")
 @admin_required
 def admin_dashboard():
-    catalogue = Catalogue()
-    books = catalogue.get_all_for_admin()
+    cat = Catalogue()
+    books = cat.get_all_for_admin()
     orders = Order.get_all()
     report = SalesReport()
     summary = report.get_summary("all")
-    return render_template("admin/dashboard.html", books=books,
-                           orders=orders, summary=summary)
+    return render_template("admin/dashboard.html", books=books, orders=orders, summary=summary)
 
 
 @app.route("/admin/books")
 @admin_required
 def admin_books():
-    catalogue = Catalogue()
-    books = catalogue.get_all_for_admin()
+    cat = Catalogue()
+    books = cat.get_all_for_admin()
     return render_template("admin/manage_books.html", books=books)
 
 
@@ -386,12 +382,12 @@ def admin_add_book():
             errors.append("Category is required.")
 
         if errors:
-            for error in errors:
-                flash(error, "danger")
+            for e in errors:
+                flash(e, "danger")
             return render_template("admin/book_form.html", action="Add", form_data=request.form)
 
         Product.create(title, author, isbn, price, stock, category, description)
-        flash(f"'{title}' has been added to the catalogue.", "success")
+        flash(f"'{title}' added to the catalogue.", "success")
         return redirect(url_for("admin_books"))
 
     return render_template("admin/book_form.html", action="Add", form_data={})
@@ -436,14 +432,13 @@ def admin_edit_book(book_id):
             errors.append("Category is required.")
 
         if errors:
-            for error in errors:
-                flash(error, "danger")
+            for e in errors:
+                flash(e, "danger")
             return render_template("admin/book_form.html", action="Edit",
                                    form_data=request.form, book=product)
 
-        Product.update(book_id, title, author, isbn, price, stock,
-                       category, description, available)
-        flash(f"'{title}' has been updated.", "success")
+        Product.update(book_id, title, author, isbn, price, stock, category, description, available)
+        flash(f"'{title}' updated.", "success")
         return redirect(url_for("admin_books"))
 
     return render_template("admin/book_form.html", action="Edit",
@@ -456,7 +451,7 @@ def admin_delete_book(book_id):
     product = Product.get_by_id(book_id)
     if product:
         Product.delete(book_id)
-        flash(f"'{product.title}' has been removed from the catalogue.", "info")
+        flash(f"'{product.title}' removed from catalogue.", "info")
     return redirect(url_for("admin_books"))
 
 
@@ -476,7 +471,45 @@ def admin_reports():
     return render_template("admin/reports.html", summary=summary, period=period)
 
 
-# ─── Run ─────────────────────────────────────────────────────────────────────
+@app.route("/admin/accounts")
+@admin_required
+def admin_accounts():
+    db = Database()
+    rows = db.fetchall("SELECT id, name, email, phone, address, role FROM accounts WHERE role = 'customer' ORDER BY name")
+    accounts = [dict(r) for r in rows]
+    return render_template("admin/accounts.html", accounts=accounts)
+
+
+@app.route("/admin/accounts/reset/<int:account_id>", methods=["GET", "POST"])
+@admin_required
+def admin_reset_password(account_id):
+    from werkzeug.security import generate_password_hash
+    db = Database()
+    acc = db.fetchone("SELECT * FROM accounts WHERE id = ? AND role = 'customer'", (account_id,))
+    if not acc:
+        flash("Account not found.", "danger")
+        return redirect(url_for("admin_accounts"))
+
+    if request.method == "POST":
+        new_password = request.form.get("new_password", "")
+        confirm = request.form.get("confirm_password", "")
+
+        if not is_strong_password(new_password):
+            flash("Password must be 8+ characters with at least one uppercase letter, number, and special character.", "danger")
+            return render_template("admin/reset_password.html", acc=acc)
+        if new_password != confirm:
+            flash("Passwords do not match.", "danger")
+            return render_template("admin/reset_password.html", acc=acc)
+
+        db.execute(
+            "UPDATE accounts SET password = ? WHERE id = ?",
+            (generate_password_hash(new_password), account_id)
+        )
+        flash(f"Password for {acc['name']} has been reset.", "success")
+        return redirect(url_for("admin_accounts"))
+
+    return render_template("admin/reset_password.html", acc=acc)
+
 
 if __name__ == "__main__":
     bootstrap()

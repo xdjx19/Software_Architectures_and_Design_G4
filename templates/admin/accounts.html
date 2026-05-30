@@ -1,0 +1,44 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Manage Accounts{% endblock %}
+
+{% block admin_content %}
+<h1 style="margin-bottom: 2rem;">Customer Accounts</h1>
+
+{% if accounts %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Address</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for acc in accounts %}
+          <tr>
+            <td class="text-muted">{{ acc.id }}</td>
+            <td><strong>{{ acc.name }}</strong></td>
+            <td>{{ acc.email }}</td>
+            <td class="text-small">{{ acc.phone or '—' }}</td>
+            <td class="text-small text-muted">{{ acc.address or '—' }}</td>
+            <td>
+              <a href="{{ url_for('admin_reset_password', account_id=acc.id) }}"
+                 class="btn btn-outline btn-sm">Reset Password</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">👤</div>
+    <h3>No customer accounts yet</h3>
+    <p>Accounts will appear here once customers register.</p>
+  </div>
+{% endif %}
+{% endblock %}

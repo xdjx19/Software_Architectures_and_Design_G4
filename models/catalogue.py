@@ -1,21 +1,14 @@
-"""
-Product and Catalogue models for Favourite Books Online Bookstore.
-Implements Observer-like refresh between Catalogue and Product data.
-
-Coding standard: PEP 8 (https://peps.python.org/pep-0008/)
-"""
+# catalogue.py - Product and Catalogue classes
+# Catalogue queries the db and returns Product objects
+# Coding standard: PEP 8 - https://peps.python.org/pep-0008/
 
 from models.database import Database
 
 
 class Product:
-    """
-    Represents a single book available in Favourite Books' catalogue.
-    Stores all book-related data and manages availability status.
-    """
+    # represents a single book in the system
 
-    def __init__(self, product_id, title, author, isbn, price, stock,
-                 category, description, available):
+    def __init__(self, product_id, title, author, isbn, price, stock, category, description, available):
         self._id = product_id
         self._title = title
         self._author = author
@@ -63,7 +56,6 @@ class Product:
         return self._available
 
     def to_dict(self):
-        """Returns a dictionary representation of the product."""
         return {
             "id": self._id,
             "title": self._title,
@@ -78,7 +70,6 @@ class Product:
 
     @staticmethod
     def get_by_id(product_id):
-        """Fetches a single Product by its ID."""
         db = Database()
         row = db.fetchone("SELECT * FROM products WHERE id = ?", (product_id,))
         if row:
@@ -89,97 +80,71 @@ class Product:
 
     @staticmethod
     def create(title, author, isbn, price, stock, category, description):
-        """Inserts a new product into the database. Returns the new product ID."""
         db = Database()
         cursor = db.execute(
-            """INSERT INTO products (title, author, isbn, price, stock, category, description)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            "INSERT INTO products (title, author, isbn, price, stock, category, description) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (title, author, isbn, float(price), int(stock), category, description)
         )
         return cursor.lastrowid
 
     @staticmethod
     def update(product_id, title, author, isbn, price, stock, category, description, available):
-        """Updates an existing product record."""
         db = Database()
         db.execute(
-            """UPDATE products SET title=?, author=?, isbn=?, price=?, stock=?,
-               category=?, description=?, available=? WHERE id=?""",
-            (title, author, isbn, float(price), int(stock),
-             category, description, int(available), product_id)
+            "UPDATE products SET title=?, author=?, isbn=?, price=?, stock=?, category=?, description=?, available=? WHERE id=?",
+            (title, author, isbn, float(price), int(stock), category, description, int(available), product_id)
         )
 
     @staticmethod
     def delete(product_id):
-        """Deletes a product from the database."""
         db = Database()
         db.execute("DELETE FROM products WHERE id = ?", (product_id,))
 
     @staticmethod
-    def reduce_stock(product_id, quantity):
-        """Reduces stock for a product after a successful order."""
+    def reduce_stock(product_id, qty):
+        # called after a successful order to update stock levels
         db = Database()
         db.execute(
             "UPDATE products SET stock = stock - ? WHERE id = ?",
-            (quantity, product_id)
+            (qty, product_id)
         )
 
 
 class Catalogue:
-    """
-    Manages the display and retrieval of books in Favourite Books' online catalogue.
-    Responsible for querying, filtering, and categorising products.
-    """
+    # manages book retrieval and filtering for the store
 
     def __init__(self):
         self._db = Database()
 
     def get_all_available(self):
-        """Returns all available products as Product instances."""
-        rows = self._db.fetchall(
-            "SELECT * FROM products WHERE available = 1 ORDER BY title"
-        )
-        return [Product(r["id"], r["title"], r["author"], r["isbn"],
-                        r["price"], r["stock"], r["category"],
-                        r["description"], r["available"]) for r in rows]
+        rows = self._db.fetchall("SELECT * FROM products WHERE available = 1 ORDER BY title")
+        return [self._row_to_product(r) for r in rows]
 
     def search(self, query):
-        """
-        Searches for products by title, author, or category.
-        Returns matching available Product instances.
-        """
         like = f"%{query}%"
         rows = self._db.fetchall(
-            """SELECT * FROM products
-               WHERE available = 1
-               AND (title LIKE ? OR author LIKE ? OR category LIKE ?)
-               ORDER BY title""",
+            "SELECT * FROM products WHERE available = 1 AND (title LIKE ? OR author LIKE ? OR category LIKE ?) ORDER BY title",
             (like, like, like)
         )
-        return [Product(r["id"], r["title"], r["author"], r["isbn"],
-                        r["price"], r["stock"], r["category"],
-                        r["description"], r["available"]) for r in rows]
+        return [self._row_to_product(r) for r in rows]
 
     def get_by_category(self, category):
-        """Returns all available products in a given category."""
         rows = self._db.fetchall(
             "SELECT * FROM products WHERE available = 1 AND category = ? ORDER BY title",
             (category,)
         )
-        return [Product(r["id"], r["title"], r["author"], r["isbn"],
-                        r["price"], r["stock"], r["category"],
-                        r["description"], r["available"]) for r in rows]
+        return [self._row_to_product(r) for r in rows]
 
     def get_all_categories(self):
-        """Returns a sorted list of distinct product categories."""
-        rows = self._db.fetchall(
-            "SELECT DISTINCT category FROM products WHERE available = 1 ORDER BY category"
-        )
+        rows = self._db.fetchall("SELECT DISTINCT category FROM products WHERE available = 1 ORDER BY category")
         return [row["category"] for row in rows]
 
     def get_all_for_admin(self):
-        """Returns all products (including unavailable) for admin management."""
+        # admins can see hidden books too
         rows = self._db.fetchall("SELECT * FROM products ORDER BY title")
-        return [Product(r["id"], r["title"], r["author"], r["isbn"],
-                        r["price"], r["stock"], r["category"],
-                        r["description"], r["available"]) for r in rows]
+        return [self._row_to_product(r) for r in rows]
+
+    def _row_to_product(self, r):
+        return Product(r["id"], r["title"], r["author"], r["isbn"],
+                       r["price"], r["stock"], r["category"],
+                       r["description"], r["available"])
